@@ -1,0 +1,15 @@
+omny.yaml
+*.state.json
+*.state.json.tmp
+
+/omny
+/omny-*
+/dist/
+
+.env
+
+.agents/
+.claude/
+.scratch/
+skills-lock.json
+scripts/e2e.sh

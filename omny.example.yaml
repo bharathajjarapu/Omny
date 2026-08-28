@@ -1,0 +1,172 @@
+# Copy to omny.yaml, set mode 0600, and set token before adding keys.
+# Providers without keys are disabled unless keyless: true.
+
+# Custom providers can use any OpenAI-compatible base URL:
+#   omny add mine sk-... -url https://api.example.com/v1 -model llama-4-scout
+
+# A token and at least one armed provider are required at startup.
+token:                          # Required unless using tokens. Generate with openssl rand -hex 32.
+# tokens:                       # Use one token per client.
+#   laptop: "..."               # Delete a line and reload to revoke it.
+#   phone:  "..."               # Token names appear in request logs.
+listen: 127.0.0.1:8080          # Use loopback or Tailscale. Never bind 0.0.0.0.
+state: /var/lib/omny/omny.state.json
+pid: /run/omny/omny.pid         # omny add uses this to reload the process.
+
+default: ovh                    # Handles unknown model names.
+fallback: [fast]                # Try these aliases after route exhaustion.
+
+providers:
+  # Keyless providers send no Authorization header and are limited per IP.
+  ovh:
+    url: https://oai.endpoints.kepler.ai.cloud.ovh.net/v1
+    keyless: true
+    rpm: 2
+  kilo:
+    url: https://api.kilo.ai/api/gateway/v1
+    keyless: true
+    rpm: 3
+    # Kilo logs free prompts and outputs for training.
+
+  groq:
+    url: https://api.groq.com/openai/v1
+    keys: []
+  cerebras:
+    url: https://api.cerebras.ai/v1
+    keys: []
+  gemini:
+    url: https://generativelanguage.googleapis.com/v1beta/openai
+    ttft: 60s                   # Reasoning models can start slowly.
+    keys: []
+  mistral:
+    url: https://api.mistral.ai/v1
+    keys: []
+  cohere:
+    url: https://api.cohere.ai/compatibility/v1
+    keys: []
+  nvidia:
+    url: https://integrate.api.nvidia.com/v1
+    ttft: 180s                  # Some models prefill for minutes.
+    keys: []
+  zhipu:
+    url: https://api.z.ai/api/paas/v4
+    ttft: 60s                   # Flash models can buffer reasoning.
+    keys: []
+  sealion:
+    url: https://api.sea-lion.ai/v1
+    rpm: 10
+    keys: []
+  reka:
+    url: https://api.reka.ai/v1
+    keys: []
+  siliconflow:
+    url: https://api.siliconflow.com/v1
+    keys: []
+  modelscope:
+    url: https://api-inference.modelscope.cn/v1
+    rpd: 2000
+    # Requires Alibaba Cloud China real-name verification.
+    keys: []
+  pollinations:
+    url: https://gen.pollinations.ai/v1
+    keys: []
+  ollamacloud:
+    url: https://ollama.com/v1
+    ttft: 120s
+    keys: []
+  huggingface:
+    url: https://router.huggingface.co/v1
+    keys: []
+  llm7:
+    url: https://api.llm7.io/v1
+    keys: []
+  opencode:
+    url: https://opencode.ai/zen/v1
+    keys: []
+  agnes:
+    url: https://apihub.agnes-ai.com/v1
+    ttft: 60s
+    keys: []
+
+  # Free routes can become paid. Probe before relying on one.
+  openrouter:
+    url: https://openrouter.ai/api/v1
+    headers:
+      HTTP-Referer: https://github.com/bharathajjarapu/omny
+      X-Title: omny
+    keys: []
+  requesty:
+    url: https://router.requesty.ai/v1
+    keys: []
+  routeway:
+    url: https://api.routeway.ai/v1
+    rpm: 5
+    keys: []
+    # Keep Go's default User-Agent; an override triggered error 1010.
+  navy:
+    url: https://api.navy/v1
+    rpm: 20
+    keys: []
+  orcarouter:
+    url: https://api.orcarouter.ai/v1
+    keys: []
+  aion:
+    url: https://api.aionlabs.ai/v1
+    keys: []
+  bazaarlink:
+    url: https://bazaarlink.ai/api/v1
+    keys: []
+  nara:
+    url: https://router.bynara.id/v1
+    keys: []
+  ainative:
+    url: https://api.ainative.studio/api/v1
+    keys: []
+  anyapi:
+    url: https://api.anyapi.ai/v1
+    keys: []
+  bai:
+    url: https://api.b.ai/v1
+    keys: []
+
+  # These providers require real-name verification. LongCat only needs email signup.
+  qianfan:
+    url: https://qianfan.baidubce.com/v2
+    keys: []
+  volcengine:
+    url: https://ark.cn-beijing.volces.com/api/v3
+    keys: []
+  longcat:
+    url: https://api.longcat.chat/openai/v1
+    keys: []
+  xfyun:
+    url: https://spark-api-open.xf-yun.com/v1
+    keys: []
+
+  # Local servers need no account or key and receive no Authorization header.
+  # Arm one with: omny add lmstudio -keyless -model qwen3-8b
+  lmstudio:
+    url: http://localhost:1234/v1
+    ttft: 300s
+  ollama:
+    url: http://localhost:11434/v1
+    ttft: 300s
+  vllm:
+    url: http://localhost:8000/v1
+    ttft: 300s
+  litellm:
+    url: http://localhost:4000/v1
+    ttft: 120s
+    keys: []
+
+# Aliases are ordered failover chains. The first segment names the provider.
+aliases:
+  fast:
+    - kilo/kilo-auto/free
+    - ovh/gpt-oss-120b
+    - cerebras/gpt-oss-120b
+    - groq/openai/gpt-oss-120b
+  big:
+    - ovh/Meta-Llama-3_3-70B-Instruct
+    - openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+    - gemini/gemini-3.6-flash

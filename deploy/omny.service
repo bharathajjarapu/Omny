@@ -1,0 +1,61 @@
+# Omny Service
+
+[Unit]
+Description=omny — self-hosted LLM gateway
+Documentation=https://github.com/bharathajjarapu/omny
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=omny
+Group=omny
+ExecStart=/usr/local/bin/omny -c /etc/omny/omny.yaml
+
+# reload re-reads the file in place; an invalid one is refused and the running
+# config keeps serving, so `systemctl reload omny` cannot take the gateway down
+ExecReload=/bin/kill -HUP $MAINPID
+
+Restart=always
+RestartSec=2
+
+# SIGTERM drains: in-flight streams are delivered before the process exits. This is
+# the ceiling on that promise. A generation still running after 10 minutes is killed and
+# its client sees a truncated stream, which is the one case the drain cannot cover.
+TimeoutStopSec=600
+
+# /var/lib/omny, created and owned by this service. `state:` in the config points here.
+StateDirectory=omny
+StateDirectoryMode=0700
+# /etc/omny; omny.yaml inside it must be 0600 and owned by this user, or omny refuses
+# to start rather than run with a world-readable keyfile
+ConfigurationDirectory=omny
+ConfigurationDirectoryMode=0750
+
+# the daemon reads one config, writes one state file, and talks HTTPS to four APIs
+# the state file is already written 0600; this makes that the floor, not the intent
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+# the bind is loopback or Tailscale; reachability is the private network's job,
+# never a wider bind, so no capability to bind a low port is needed or granted
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,36 @@
+version: "2"
+
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - nilerr
+    - unconvert
+    - wastedassign
+    - copyloopvar
+    - intrange
+    - usestdlibvars
+
+  settings:
+    staticcheck:
+      checks: ["all"]
+
+    errcheck:
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - (*encoding/json.Encoder).Encode
+        - (io.Closer).Close
+        - (*os.File).Close
+        - os.Remove
+
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [errcheck, bodyclose]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
